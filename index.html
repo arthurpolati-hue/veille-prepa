@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0B0E11">
+<meta name="robots" content="noindex">
+<title>Veille Prépa Physique</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0B0E11; --steel:#1B1F22; --steel-line:#2C3134; --paper:#F6F4EF; --fog:#9AA0A6;
+    --blue:#3E8EFF; --blue-dim:#173A63; --blue-deep:#0E2F57; --amber:#E7B45A;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{background:var(--ink);color:var(--paper);font-family:'Work Sans',system-ui,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:860px;margin:0 auto;padding:22px 16px 60px;}
+  a{color:var(--blue);}
+  button{font-family:inherit;}
+  .brand{display:flex;align-items:center;gap:8px;}
+  .brand-dot{width:9px;height:9px;border-radius:50%;background:var(--blue);box-shadow:0 0 0 4px var(--blue-dim);}
+  .brand-text{font-weight:700;letter-spacing:0.1em;font-size:0.76rem;text-transform:uppercase;color:var(--blue);}
+  h1{font-family:'Bebas Neue',sans-serif;font-size:2.4rem;line-height:1;margin:12px 0 4px;letter-spacing:0.01em;}
+  .sub{color:var(--fog);font-size:0.9rem;margin:0 0 18px;}
+  h2{font-family:'Bebas Neue',sans-serif;font-size:1.45rem;margin:0 0 10px;letter-spacing:0.01em;}
+  .card{background:var(--steel);border:1px solid var(--steel-line);border-radius:14px;padding:16px;margin-bottom:14px;}
+
+  /* Recherche */
+  .recherche{display:flex;gap:8px;}
+  .recherche input{flex:1;min-width:0;background:var(--ink);border:1px solid var(--steel-line);color:var(--paper);
+    border-radius:10px;padding:12px 13px;font-size:1rem;font-family:inherit;}
+  .recherche input:focus{outline:2px solid var(--blue);outline-offset:1px;}
+  .btn{border:1px solid transparent;border-radius:10px;padding:11px 15px;font-size:0.9rem;font-weight:600;cursor:pointer;white-space:nowrap;}
+  .btn-blue{background:var(--blue);color:#071527;}
+  .btn-ghost{background:transparent;border-color:var(--steel-line);color:var(--paper);}
+  .btn-ghost:hover{border-color:var(--fog);}
+  .btn-sm{padding:7px 11px;font-size:0.8rem;border-radius:8px;}
+  .btn-danger{background:transparent;border-color:#5A2D2D;color:#FFB4B4;}
+  .exemples{font-size:0.8rem;color:var(--fog);margin:10px 0 0;}
+  .exemples button{background:none;border:none;color:var(--blue);padding:0 2px;cursor:pointer;font-size:0.8rem;text-decoration:underline;}
+  .compris{margin:14px 0 0;padding-top:12px;border-top:1px solid var(--steel-line);}
+  .compris-titre{font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--fog);margin-bottom:8px;}
+  .mots{display:flex;flex-wrap:wrap;gap:6px;}
+  .mot{background:var(--ink);border:1px solid var(--steel-line);border-radius:999px;padding:5px 10px;font-size:0.8rem;}
+  .mot small{color:var(--fog);}
+  .mot.inconnu{border-color:var(--amber);color:var(--amber);}
+  .avertissement{font-size:0.8rem;color:var(--amber);margin:8px 0 0;}
+  details.avance{margin-top:10px;}
+  details.avance summary{cursor:pointer;font-size:0.8rem;color:var(--fog);}
+  details.avance textarea{width:100%;min-height:78px;margin-top:8px;background:var(--ink);border:1px solid var(--steel-line);color:var(--paper);
+    border-radius:8px;padding:9px;font-family:ui-monospace,Menlo,monospace;font-size:0.76rem;resize:vertical;}
+  .ajout{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
+  .ajout input{flex:1 1 200px;min-width:0;background:var(--ink);border:1px solid var(--steel-line);color:var(--paper);border-radius:8px;padding:8px 10px;font-family:inherit;font-size:0.9rem;}
+
+  /* Sujets */
+  .sujets-tete{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:22px 0 10px;}
+  .sujets-tete h2{margin:0;}
+  .chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;}
+  .chips::-webkit-scrollbar{display:none;}
+  .chip{flex:0 0 auto;background:var(--steel);border:1px solid var(--steel-line);color:var(--paper);border-radius:999px;
+    padding:8px 14px;font-size:0.88rem;cursor:pointer;white-space:nowrap;}
+  .chip.actif{background:var(--blue-deep);border-color:var(--blue);color:#fff;}
+  .chip.recherche{border-style:dashed;}
+
+  /* Gestion */
+  .gestion{display:none;}
+  .gestion.ouverte{display:block;}
+  .g-ligne{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--steel-line);flex-wrap:wrap;}
+  .g-ligne:last-of-type{border-bottom:none;}
+  .g-nom{flex:1 1 160px;min-width:0;font-size:0.92rem;}
+  .g-nom small{display:block;color:var(--fog);font-size:0.74rem;overflow-wrap:anywhere;}
+  .g-ligne.masque .g-nom{color:var(--fog);text-decoration:line-through;}
+  .g-actions{display:flex;gap:6px;flex-wrap:wrap;}
+  .g-bas{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;}
+  .lien-transfert{width:100%;margin-top:10px;background:var(--ink);border:1px solid var(--steel-line);color:var(--fog);border-radius:8px;padding:8px;font-size:0.74rem;}
+
+  /* Contenu d'un sujet */
+  .sujet-tete{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:18px 0 10px;}
+  .sujet-tete h2{font-size:1.9rem;margin:0;}
+  .badge{font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--blue);}
+  .synth-maj{font-size:0.76rem;color:var(--fog);margin:-4px 0 12px;}
+  .synth-intro{font-size:0.92rem;color:#D6D8DA;margin:0 0 14px;}
+  .synth-point{border-top:1px solid var(--steel-line);padding:12px 0;}
+  .synth-point h3{font-size:0.98rem;margin:0 0 6px;}
+  .synth-point p{margin:0 0 8px;font-size:0.9rem;color:#D6D8DA;}
+  .synth-point b{color:var(--paper);}
+  .src-chips{display:flex;flex-wrap:wrap;gap:6px;}
+  .src-chip{font-size:0.74rem;color:var(--blue);text-decoration:none;border:1px solid var(--blue-dim);border-radius:999px;padding:3px 9px;}
+  .flux-tete{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:6px;}
+  .flux-tete h2{margin:0;}
+  .flux-tete select{background:var(--ink);border:1px solid var(--steel-line);color:var(--paper);border-radius:8px;padding:7px 9px;font-family:inherit;font-size:0.82rem;}
+  .flux-item{border-top:1px solid var(--steel-line);padding:12px 0;}
+  .flux-meta{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:0.74rem;color:var(--fog);}
+  .flux-badge{border:1px solid var(--steel-line);border-radius:999px;padding:1px 8px;}
+  .flux-badge.neuf{border-color:var(--blue);color:var(--blue);}
+  .flux-titre{display:block;margin:6px 0 0;color:var(--paper);font-weight:600;font-size:0.94rem;text-decoration:none;}
+  .flux-titre:hover{color:var(--blue);}
+  .flux-concl{margin:8px 0 0;font-size:0.84rem;color:#C9CCCF;background:var(--ink);border-radius:8px;padding:9px 11px;}
+  .flux-concl span{display:block;font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--fog);margin-bottom:3px;}
+  .note{font-size:0.76rem;color:var(--fog);margin:10px 0 0;}
+  .vide{font-size:0.88rem;color:var(--fog);margin:6px 0;}
+  footer{font-size:0.76rem;color:var(--fog);margin-top:26px;line-height:1.55;}
+  @media (max-width:520px){ .recherche{flex-direction:column;} .sujet-tete h2{font-size:1.6rem;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand"><span class="brand-dot"></span><span class="brand-text">Veille prépa physique</span></div>
+  <h1>Méta-analyses</h1>
+  <p class="sub">Les dernières méta-analyses et revues systématiques, résumées pour la préparation physique.</p>
+
+  <form class="card" id="rechercheForm" autocomplete="off">
+    <h2>Chercher un sujet</h2>
+    <div class="recherche">
+      <input type="search" id="rechercheTexte" maxlength="200" placeholder="Ex. bénéfice saut en hauteur" aria-label="Sujet à chercher">
+      <button class="btn btn-blue" type="submit">Chercher</button>
+    </div>
+    <p class="exemples">Exemples :
+      <button type="button" data-exemple="bénéfice saut en hauteur">bénéfice saut en hauteur</button> ·
+      <button type="button" data-exemple="développement de la VO2max">développement de la VO2max</button> ·
+      <button type="button" data-exemple="sprint traîneau football">sprint traîneau football</button>
+    </p>
+    <div id="compris"></div>
+  </form>
+
+  <div class="sujets-tete">
+    <h2>Mes sujets</h2>
+    <button class="btn btn-ghost btn-sm" type="button" id="gererBtn" aria-expanded="false">Gérer</button>
+  </div>
+  <div class="chips" id="chips"></div>
+
+  <div class="card gestion" id="gestion"></div>
+
+  <div id="contenu"></div>
+
+  <footer>
+    Source : Europe PMC (qui indexe PubMed) — méta-analyses et revues systématiques uniquement, articles rétractés exclus,
+    études sur des patients (cancer, diabète, réadaptation…) écartées.
+    Les synthèses des sujets pré-intégrés sont rédigées à la main, chaque chiffre vérifié dans le résumé de l'étude citée.
+    Pour les sujets que tu ajoutes, c'est la conclusion des auteurs, en anglais, sans résumé automatique.
+    Une méta-analyse n'est pas infaillible : elle vaut ce que valent les études qu'elle rassemble.
+    Tes sujets sont enregistrés dans ce navigateur, sur cet appareil (bouton « Gérer » pour les transférer).
+  </footer>
+</div>
+<script type="module" src="app.js"></script>
+</body>
+</html>
