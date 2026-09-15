@@ -83,5 +83,9 @@ chiffres disparaissent.
 
 ## Mise en ligne
 
-Pas encore en ligne au 15/09/2026. Option prévue : un dépôt GitHub séparé publié avec GitHub Pages.
-N'importe quel hébergement de fichiers statiques convient.
+- **Site** : https://arthurpolati-hue.github.io/veille-prepa/ (en ligne depuis le 15/09/2026)
+- **Dépôt** : `arthurpolati-hue/veille-prepa` (GitHub, public), branche `main`, GitHub Pages à la racine.
+- **Mettre à jour** : modifier les fichiers, `git commit`, `git push`. Le site se met à jour en 1 à 2 min
+  (les navigateurs gardent les fichiers jusqu'à 10 min).
+- **Build bloqué** : `gh api -X POST repos/arthurpolati-hue/veille-prepa/pages/builds`.
+- La page porte `noindex` : elle n'apparaît pas dans Google, on y accède par le lien.
