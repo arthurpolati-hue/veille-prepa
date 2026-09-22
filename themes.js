@@ -1,7 +1,7 @@
 // Sujets pré-intégrés : requêtes du flux automatique + synthèses « Ce qu'on sait aujourd'hui ».
 //
 // ⚠️ Règles pour toute mise à jour des synthèses (les mêmes que pour la veille d'ARD Coaching) :
-//  - ne jamais ajouter une référence de mémoire : la retrouver dans Europe PMC ou PubMed,
+//  - ne jamais ajouter une référence de mémoire : la retrouver dans PubMed,
 //    vérifier son DOI et lire son résumé COMPLET avant d'écrire dessus ;
 //  - aucun chiffre qui ne figure pas dans le résumé de l'étude citée ;
 //  - toujours donner les CONDITIONS d'un résultat (population, durée, type de test) et

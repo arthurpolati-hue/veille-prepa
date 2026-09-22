@@ -1,7 +1,7 @@
 // Veille prépa physique — logique de la page.
 //
 // Tout se passe dans le navigateur : pas de serveur, pas de compte.
-//  - Flux : API publique d'Europe PMC (CORS ouvert, sans clé), filtrée sur les méta-analyses
+//  - Flux : API publique PubMed / NCBI (CORS ouvert, sans clé), filtrée sur les méta-analyses
 //    et revues systématiques, articles rétractés exclus. Mis en cache 12 h par sujet.
 //  - Sujets de l'utilisateur : localStorage (propre à l'appareil). Transfert vers un autre
 //    appareil par un lien qui contient les sujets dans l'ancre (#sujets=…), jamais envoyée
@@ -221,7 +221,7 @@ function renderTout(){
   renderContenu();
 }
 
-/* ───────────────────────────── Flux Europe PMC ───────────────────────────── */
+/* ───────────────────────────── Flux PubMed ───────────────────────────── */
 
 // Titres et résumés arrivent avec des balises et parfois des entités doublement encodées
 // (« &lt;sub&gt;2&lt;/sub&gt; ») : on décode, puis on retire les balises.
@@ -288,10 +288,10 @@ async function chargerFlux(s, forcer){
     try{ localStorage.setItem(cle, JSON.stringify(cache)); }catch(_){}
     if(jeton === jetonFlux) renderFlux(cache);
   } catch(e){
-    console.error('[veille] Europe PMC indisponible', e);
+    console.error('[veille] PubMed indisponible', e);
     if(jeton !== jetonFlux) return;
     if(cache){ renderFlux(cache, true); return; }
-    $('#flux').innerHTML = '<p class="vide">Impossible de joindre Europe PMC pour l\'instant (réseau ou service indisponible). Réessaie dans un moment.</p>';
+    $('#flux').innerHTML = '<p class="vide">Impossible de joindre PubMed pour l\'instant (réseau ou service indisponible). Réessaie dans un moment.</p>';
     $('#fluxNote').textContent = '';
   }
 }

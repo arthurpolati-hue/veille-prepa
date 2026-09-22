@@ -32,10 +32,22 @@ export const EXCLU_CLINIQUE_PUBMED = ' NOT (patients[ti] OR cancer[ti] OR stroke
 
 const url = (methode, params) => BASE + methode + '?' + new URLSearchParams({ db: 'pubmed', tool: OUTIL, ...params });
 
-async function lire(methode, params, texte){
-  const r = await fetch(url(methode, params));
-  if(!r.ok) throw new Error(methode + ' HTTP ' + r.status);
-  return texte ? r.text() : r.json();
+const pause = ms => new Promise(r => setTimeout(r, ms));
+
+// Le NCBI bride à 3 requêtes par seconde et par adresse IP : au-delà, la connexion est
+// refusée et `fetch` échoue sans code HTTP. On espace donc les appels et on réessaie une
+// fois après une seconde, plutôt que d'afficher une erreur à l'utilisateur.
+async function lire(methode, params, texte, essai = 0){
+  try{
+    const r = await fetch(url(methode, params));
+    if(r.status === 429) throw new Error('429');
+    if(!r.ok) throw new Error(methode + ' HTTP ' + r.status);
+    return texte ? r.text() : r.json();
+  } catch(e){
+    if(essai >= 1) throw e;
+    await pause(1200);
+    return lire(methode, params, texte, essai + 1);
+  }
 }
 
 /** Nettoie un texte de résumé : espaces, balises éventuelles. */
@@ -131,12 +143,12 @@ export async function chercher(requete, options = {}){
   const total = parseInt(res.count, 10) || 0;
   if(!ids.length) return { total, items: [] };
 
-  // Les deux appels suivants portent sur la même liste d'identifiants : on peut les
-  // faire ensemble (2 requêtes simultanées, on reste sous la limite de 3 par seconde).
-  const [resume, xml] = await Promise.all([
-    lire('esummary.fcgi', { retmode: 'json', id: ids.join(',') }),
-    lire('efetch.fcgi', { retmode: 'xml', id: ids.join(',') }, true)
-  ]);
+  // Les deux appels suivants sont faits L'UN APRÈS L'AUTRE, avec une pause : en parallèle,
+  // trois requêtes partaient dans la même seconde et le NCBI coupait la connexion.
+  await pause(350);
+  const resume = await lire('esummary.fcgi', { retmode: 'json', id: ids.join(',') });
+  await pause(350);
+  const xml = await lire('efetch.fcgi', { retmode: 'xml', id: ids.join(',') }, true);
 
   let conclusions = new Map();
   try{ conclusions = resumesDepuisXml(xml); }
