@@ -16,6 +16,9 @@ Il reprend l'onglet « Actualités » de l'espace coach d'ARD Coaching, orienté
   - le résultat peut être ajouté à « Mes sujets ».
 - **Gérer** : ordre des sujets, masquer un sujet pré-intégré, renommer, modifier les mots-clés
   ou supprimer un sujet perso, transfert vers un autre appareil, réinitialisation.
+- **Traduction** : chaque article a un lien « Traduire en français » (ouvre Google Traduction avec le
+  titre et la conclusion, contenu public) ; les textes anglais portent `lang="en"` pour que Safari et
+  Chrome proposent de traduire la page entière. Pas d'IA, pas de clé.
 - **Sujets ajoutés par l'utilisateur** : pas de synthèse, seulement la conclusion des auteurs, en
   anglais. Le résumé automatique a été écarté (option A choisie par Arthur le 15/09/2026 : gratuit, sans IA).
 
@@ -24,7 +27,8 @@ Il reprend l'onglet « Actualités » de l'espace coach d'ARD Coaching, orienté
 | Fichier | Rôle |
 |---|---|
 | `index.html` | Page et styles (thème sombre, mobile d'abord) |
-| `app.js` | Logique : état, rendu, appels Europe PMC, cache, gestion, transfert |
+| `app.js` | Logique : état, rendu, appels PubMed, cache, gestion, transfert |
+| `pubmed.js` | Accès à PubMed (esearch → esummary + efetch), extraction de la conclusion des auteurs |
 | `themes.js` | Sujets pré-intégrés : requêtes, synthèses, références vérifiées (`REFERENCES`), exclusions cliniques |
 | `traduction.js` | Lexique français → anglais et construction des requêtes Europe PMC |
 
@@ -37,8 +41,15 @@ Pas de build, pas de dépendance : des modules ES chargés directement par le na
 - **Transfert entre appareils** : « Gérer » → lien `#sujets=<base64url JSON>`. L'ancre n'est jamais
   envoyée au serveur. À l'ouverture, une confirmation est demandée, puis les données sont validées
   (`normaliserEtat`) avant import.
-- **Flux** : API publique Europe PMC (CORS ouvert, sans clé), mis en cache 12 h par requête et par tri
-  (clés `veille-prepa:flux:*`).
+- **Flux** : API publique **PubMed / NCBI E-utilities** (CORS ouvert, sans clé), mise en cache 12 h par
+  requête (clés `veille-prepa:flux:v2:*`).
+  ⚠️ **Changement du 22/09/2026** : le site utilisait Europe PMC, qui a cessé d'envoyer l'en-tête
+  `Access-Control-Allow-Origin` (preflight OPTIONS en 403). Tout navigateur bloquait alors la lecture,
+  le flux affichait « Impossible de joindre Europe PMC », alors que l'API répondait normalement en
+  ligne de commande. **Leçon : une API sans CORS est inutilisable depuis une page web, même si `curl`
+  fonctionne.** Le même problème avait cassé l'onglet Actualités d'ARD Coaching, réparé de la même façon.
+  Conséquences : requêtes en syntaxe PubMed (`"expression"[ti]`, `meta-analysis[pt]`), tri « plus citées »
+  retiré (PubMed ne trie que par date), limite d'usage 3 requêtes/seconde sans clé.
 - **Filtre** : méta-analyses et revues systématiques, source MEDLINE, articles rétractés exclus, études
   cliniques écartées (`EXCLUSIONS_CLINIQUES`, appliqué aussi aux recherches libres).
 - **Aucun cookie, aucune mesure d'audience, aucune donnée personnelle.**

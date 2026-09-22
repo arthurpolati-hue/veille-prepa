@@ -75,15 +75,15 @@ export const REFERENCES = {
 };
 
 // Exclusions communes aux sujets pré-intégrés : populations cliniques, hors sujet en prépa physique.
-export const EXCLUSIONS_CLINIQUES = ' NOT (TITLE:patients OR TITLE:cancer OR TITLE:"heart failure" OR TITLE:diabet* OR TITLE:stroke '
-  + 'OR TITLE:COPD OR TITLE:"chronic obstructive" OR TITLE:"multiple sclerosis" OR TITLE:parkinson* OR TITLE:dialysis '
-  + 'OR TITLE:"spinal cord" OR TITLE:HIV OR TITLE:osteoarthritis OR TITLE:pregnan* OR TITLE:obes* OR TITLE:rehabilitation '
-  + 'OR TITLE:"cerebral palsy" OR TITLE:mortality OR TITLE:"all-cause")';
+export const EXCLUSIONS_CLINIQUES = ' NOT (patients[ti] OR cancer[ti] OR "heart failure"[ti] OR diabetes[ti] '
+  + 'OR stroke[ti] OR COPD[ti] OR "chronic obstructive"[ti] OR "multiple sclerosis"[ti] OR parkinson[ti] '
+  + 'OR dialysis[ti] OR "spinal cord"[ti] OR HIV[ti] OR osteoarthritis[ti] OR pregnancy[ti] OR obesity[ti] '
+  + 'OR rehabilitation[ti] OR "cerebral palsy"[ti] OR mortality[ti] OR "all-cause"[ti])';
 
 export const THEMES = [
   {
     k: 'plyometrie', l: 'Plyométrie', emoji: '🦘',
-    requete: '(TITLE:plyometric* OR TITLE:"jump training" OR TITLE:"stretch-shortening")',
+    requete: '(plyometric*[ti] OR "jump training"[ti] OR "stretch-shortening"[ti])',
     synthese: {
       maj: '2026-09-15',
       intro: "La plyométrie améliore le saut, le sprint, les changements de direction et même la force, avec des effets "
@@ -131,11 +131,11 @@ export const THEMES = [
   },
   {
     k: 'force', l: 'Force', emoji: '🏋️',
-    requete: '(TITLE:"resistance training" OR TITLE:"strength training" OR TITLE:"maximal strength" OR TITLE:"muscular strength" '
-      + 'OR TITLE:"velocity-based" OR TITLE:"1RM" OR TITLE:"concurrent training") '
-      + 'AND (TITLE:strength OR TITLE:power OR TITLE:athlete* OR TITLE:performance OR TITLE:trained) '
-      + 'NOT (TITLE:older OR TITLE:elderly OR TITLE:sarcopenia OR TITLE:arthroplasty OR TITLE:supplement* OR TITLE:ashwagandha '
-      + 'OR TITLE:"motor unit" OR TITLE:corticospinal OR TITLE:frailty OR TITLE:caffeine* OR TITLE:mortality OR TITLE:apnea OR TITLE:apnoea)',
+    requete: '(("resistance training"[ti] OR "strength training"[ti] OR "maximal strength"[ti] OR "muscular strength"[ti] '
+      + 'OR "velocity-based"[ti] OR "1RM"[ti] OR "concurrent training"[ti]) '
+      + 'AND (strength[ti] OR power[ti] OR athletes[ti] OR performance[ti] OR trained[ti])) '
+      + 'NOT (older[ti] OR elderly[ti] OR sarcopenia[ti] OR arthroplasty[ti] OR supplementation[ti] OR ashwagandha[ti] '
+      + 'OR "motor unit"[ti] OR corticospinal[ti] OR frailty[ti] OR caffeine[ti] OR apnea[ti])',
     synthese: {
       maj: '2026-09-15',
       intro: "La force maximale répond d'abord à la <b>charge</b> et au <b>volume</b> ; la fréquence compte surtout parce qu'elle permet "
@@ -179,9 +179,9 @@ export const THEMES = [
   },
   {
     k: 'vitesse', l: 'Vitesse', emoji: '⚡',
-    requete: '(TITLE:sprint* OR TITLE:"change of direction" OR TITLE:"change-of-direction" OR TITLE:agility OR TITLE:"running speed") '
-      + 'NOT (TITLE:"sprint interval" OR TITLE:beetroot OR TITLE:caffeine OR TITLE:supplement* OR TITLE:bicarbonate '
-      + 'OR TITLE:"blood pressure" OR TITLE:systolic OR TITLE:hypertension)',
+    requete: '(sprint*[ti] OR "change of direction"[ti] OR "change-of-direction"[ti] OR agility[ti] OR "running speed"[ti]) '
+      + 'NOT ("sprint interval"[ti] OR beetroot[ti] OR caffeine[ti] OR supplementation[ti] OR bicarbonate[ti] '
+      + 'OR "blood pressure"[ti] OR systolic[ti] OR hypertension[ti])',
     synthese: {
       maj: '2026-09-15',
       intro: "Pour le sprint court, aucune méthode isolée ne se détache : c'est la <b>combinaison</b> des méthodes qui ressort, "
@@ -226,12 +226,12 @@ export const THEMES = [
   },
   {
     k: 'endurance', l: 'Endurance & VO2max', emoji: '🫁',
-    requete: '(TITLE:"VO2max" OR TITLE:"VO2 max" OR TITLE:"maximal oxygen uptake" OR TITLE:"endurance performance" OR TITLE:"running economy" '
-      + 'OR TITLE:"high-intensity interval" OR TITLE:HIIT OR TITLE:"endurance training" OR TITLE:"endurance athletes" OR TITLE:"sprint interval") '
-      + 'NOT (TITLE:"chronic obstructive" OR TITLE:pulmonary OR TITLE:cardiometabolic OR TITLE:"older adults" OR TITLE:elderly OR TITLE:enjoyment '
-      + 'OR TITLE:depress* OR TITLE:cognitive OR TITLE:insulin OR TITLE:"blood pressure" OR TITLE:vascular OR TITLE:"fat mass" '
-      + 'OR TITLE:"body composition" OR TITLE:"mental health" OR TITLE:caffeine OR TITLE:supplement* OR TITLE:"amino acid*" '
-      + 'OR TITLE:"health-related" OR TITLE:psycholog*)',
+    requete: '("VO2max"[ti] OR "VO2 max"[ti] OR "maximal oxygen uptake"[ti] OR "endurance performance"[ti] '
+      + 'OR "running economy"[ti] OR "high-intensity interval"[ti] OR HIIT[ti] OR "endurance training"[ti] '
+      + 'OR "endurance athletes"[ti] OR "sprint interval"[ti]) '
+      + 'NOT (pulmonary[ti] OR cardiometabolic[ti] OR "older adults"[ti] OR enjoyment[ti] OR depression[ti] '
+      + 'OR cognitive[ti] OR insulin[ti] OR vascular[ti] OR "fat mass"[ti] OR "body composition"[ti] '
+      + 'OR "mental health"[ti] OR caffeine[ti] OR supplementation[ti] OR "health-related"[ti] OR psychological[ti])',
     synthese: {
       maj: '2026-09-15',
       intro: "Le continu comme le fractionné améliorent fortement la VO2max chez des adultes peu à moyennement entraînés. "

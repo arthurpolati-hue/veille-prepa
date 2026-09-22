@@ -10,14 +10,15 @@
 
 import { THEMES, REFERENCES, EXCLUSIONS_CLINIQUES } from './themes.js';
 import { analyser, construireRequete } from './traduction.js';
+import { chercher as chercherPubmed, lienArticle } from './pubmed.js';
 
-const EPMC = 'https://www.ebi.ac.uk/europepmc/webservices/rest/search';
-const FILTRE = ' AND (PUB_TYPE:"Meta-Analysis" OR PUB_TYPE:"Systematic Review") AND SRC:MED NOT PUB_TYPE:"Retracted Publication"';
+// PubMed (NCBI) depuis le 22/09/2026 : Europe PMC a cessé d'envoyer les en-têtes CORS,
+// son API est devenue inutilisable depuis un navigateur (détails dans pubmed.js).
+const FILTRE = ' AND (meta-analysis[pt] OR systematic review[pt]) NOT retracted publication[pt]';
 const CACHE_MS = 12 * 3600 * 1000;
 const SEUIL_ELARGIR = 5;            // moins de résultats dans les titres -> on cherche aussi dans les résumés
 const CLE_ETAT = 'veille-prepa:etat:v1';
 const ID_RECHERCHE = '__recherche';
-const TRIS = { recent: 'P_PDATE_D desc', cite: 'CITED desc' };
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
@@ -90,7 +91,8 @@ function sujetPerso(p, ponctuel){
   // Même filtre que les sujets pré-intégrés : sans lui, « VO2max » ramène surtout de la réadaptation cardiaque.
   const avecFiltre = q => q ? '(' + q + ')' + EXCLUSIONS_CLINIQUES : '';
   return { id: p.id, titre: p.titre, emoji: ponctuel ? '🔎' : '📌', preset: false, ponctuel, saisie: p.saisie, analyse: a,
-           requete: avecFiltre(construireRequete(a.groupes, 'TITLE')), requeteLarge: avecFiltre(construireRequete(a.groupes, 'TITLE_ABS')) };
+           requete: avecFiltre(construireRequete(a.groupes, 'ti', a.mode)),
+           requeteLarge: avecFiltre(construireRequete(a.groupes, 'tiab', a.mode)) };
 }
 
 const sujetsVisibles = () => etat.ordre
@@ -203,13 +205,7 @@ function renderContenu(){
     <div class="card">
       <div class="flux-tete">
         <h2>Méta-analyses</h2>
-        <div style="display:flex;gap:6px;align-items:center;">
-          <select id="tri" aria-label="Trier">
-            <option value="recent" ${etat.tri === 'recent' ? 'selected' : ''}>Plus récentes</option>
-            <option value="cite" ${etat.tri === 'cite' ? 'selected' : ''}>Plus citées</option>
-          </select>
-          <button class="btn btn-ghost btn-sm" type="button" id="rafraichir" aria-label="Actualiser">↻</button>
-        </div>
+        <button class="btn btn-ghost btn-sm" type="button" id="rafraichir" aria-label="Actualiser">↻</button>
       </div>
       ${sy ? '' : `<p class="note" style="margin:0 0 6px;">Pas de synthèse rédigée pour ce sujet : voici les méta-analyses trouvées, avec la conclusion de leurs auteurs.</p>`}
       <div id="flux"><p class="vide">Recherche des méta-analyses…</p></div>
@@ -257,25 +253,10 @@ function hacher(s){
   return h.toString(36);
 }
 
-async function interroger(requete, tri){
-  const url = `${EPMC}?query=${encodeURIComponent('(' + requete + ')' + FILTRE)}`
-    + `&format=json&resultType=core&pageSize=12&sort=${encodeURIComponent(TRIS[tri])}`;
-  const r = await fetch(url);
-  if(!r.ok) throw new Error('HTTP ' + r.status);
-  const d = await r.json();
-  return {
-    total: d.hitCount || 0,
-    items: ((d.resultList && d.resultList.result) || []).map(x => ({
-      titre: texteBrut(x.title),
-      auteurs: texteBrut(x.authorString),
-      revue: texteBrut(x.journalInfo && x.journalInfo.journal && (x.journalInfo.journal.isoabbreviation || x.journalInfo.journal.title)),
-      date: x.firstPublicationDate || String(x.pubYear || ''),
-      citations: Number(x.citedByCount) || 0,
-      doi: x.doi || '', pmid: x.pmid || '',
-      types: (x.pubTypeList && x.pubTypeList.pubType) || [],
-      conclusion: extraireConclusion(x.abstractText)
-    }))
-  };
+// PubMed trie par date. Le tri « plus citées » n'existe pas dans les E-utilities :
+// l'option a été retirée de l'écran.
+async function interroger(requete){
+  return chercherPubmed(requete + FILTRE);
 }
 
 let jetonFlux = 0;
@@ -286,17 +267,17 @@ async function chargerFlux(s, forcer){
     $('#fluxNote').textContent = '';
     return;
   }
-  const cle = 'veille-prepa:flux:' + hacher(s.requete + '|' + (s.requeteLarge || '') + '|' + etat.tri);
+  const cle = 'veille-prepa:flux:v2:' + hacher(s.requete + '|' + (s.requeteLarge || ''));
   let cache = null;
   try{ cache = JSON.parse(localStorage.getItem(cle) || 'null'); }catch(_){}
   if(!forcer && cache && Date.now() - cache.t < CACHE_MS){ renderFlux(cache); return; }
 
   $('#flux').innerHTML = '<p class="vide">Recherche des méta-analyses…</p>';
   try{
-    let res = await interroger(s.requete, etat.tri);
+    let res = await interroger(s.requete);
     let large = false;
     if(res.total < SEUIL_ELARGIR && s.requeteLarge){
-      const r2 = await interroger(s.requeteLarge, etat.tri);
+      const r2 = await interroger(s.requeteLarge);
       if(r2.total > res.total){ res = r2; large = true; }
     }
     cache = { t: Date.now(), total: res.total, items: res.items, large };
@@ -311,32 +292,41 @@ async function chargerFlux(s, forcer){
   }
 }
 
+// Les articles sont en anglais. Pas d'IA ni de clé : on ouvre Google Traduction avec le
+// titre et la conclusion (contenu public). Les textes portent lang="en" pour que Safari
+// et Chrome proposent aussi de traduire la page entière.
+function lienTraduction(it){
+  const texte = [it.titre, it.conclusion].filter(Boolean).join('\n\n').slice(0, 4500);
+  return 'https://translate.google.com/?sl=en&tl=fr&op=translate&text=' + encodeURIComponent(texte);
+}
+
 function renderFlux(cache, horsLigne){
   const il30j = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
   const items = cache.items || [];
   $('#flux').innerHTML = items.length ? items.map(it => {
-    const lien = it.doi ? `https://doi.org/${encodeURI(it.doi)}`
-               : (it.pmid ? `https://europepmc.org/article/MED/${encodeURIComponent(it.pmid)}` : '');
-    const type = it.types.some(x => /meta-analysis/i.test(x)) ? 'Méta-analyse' : 'Revue systématique';
-    const noms = it.auteurs.split(',');
-    const auteurs = noms.slice(0, 2).join(',') + (noms.length > 2 ? ' et al.' : '');
+    const lien = lienArticle(it);
+    const type = it.metaAnalyse ? 'Méta-analyse' : 'Revue systématique';
+    const noms = it.auteurs || [];
+    const auteurs = noms.slice(0, 2).join(', ') + (noms.length > 2 ? ' et al.' : '');
     return `<div class="flux-item">
       <div class="flux-meta">
         ${it.date >= il30j ? '<span class="flux-badge neuf">Nouveau</span>' : ''}
         <span class="flux-badge">${type}</span>
-        <span>${escapeHtml(fmtDate(it.date))}${it.revue ? ' · ' + escapeHtml(it.revue) : ''}${it.citations ? ` · cité ${it.citations} fois` : ''}</span>
+        <span>${escapeHtml(fmtDate(it.date))}${it.revue ? ' · ' + escapeHtml(it.revue) : ''}</span>
       </div>
-      ${lien ? `<a class="flux-titre" href="${escapeHtml(lien)}" target="_blank" rel="noopener">${escapeHtml(it.titre)}</a>`
-             : `<span class="flux-titre">${escapeHtml(it.titre)}</span>`}
+      ${lien ? `<a class="flux-titre" href="${escapeHtml(lien)}" target="_blank" rel="noopener" lang="en">${escapeHtml(it.titre)}</a>`
+             : `<span class="flux-titre" lang="en">${escapeHtml(it.titre)}</span>`}
       <div class="flux-meta" style="margin-top:4px;">${escapeHtml(auteurs)}</div>
-      ${it.conclusion ? `<p class="flux-concl"><span>Conclusion des auteurs</span>${escapeHtml(it.conclusion)}</p>` : ''}
+      ${it.conclusion ? `<p class="flux-concl" lang="en"><span>Conclusion des auteurs</span>${escapeHtml(it.conclusion)}</p>` : ''}
+      <a class="flux-trad" href="${escapeHtml(lienTraduction(it))}" target="_blank" rel="noopener">🌐 Traduire en français</a>
     </div>`;
   }).join('') : '<p class="vide">Aucune méta-analyse trouvée. Essaie des mots-clés plus larges (par exemple un seul mot de moins).</p>';
   const quand = new Date(cache.t);
   $('#fluxNote').textContent = (horsLigne ? 'Hors ligne : dernière liste enregistrée. ' : '')
     + `${(cache.total || 0).toLocaleString('fr-FR')} publication(s) trouvée(s)`
     + (cache.large ? ' en cherchant aussi dans les résumés (peu de résultats dans les titres seuls)' : '')
-    + ` · mis à jour le ${quand.toLocaleDateString('fr-FR')} à ${quand.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}.`;
+    + ` · mis à jour le ${quand.toLocaleDateString('fr-FR')} à ${quand.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}.`
+    + ' Les articles sont en anglais : « Traduire en français » ouvre la traduction du titre et de la conclusion.';
 }
 
 /* ───────────────────────────── Actions ───────────────────────────── */
@@ -394,12 +384,7 @@ $('#chips').addEventListener('click', e => {
   renderContenu();
 });
 
-$('#contenu').addEventListener('change', e => {
-  if(e.target.id !== 'tri') return;
-  etat.tri = e.target.value === 'cite' ? 'cite' : 'recent';
-  sauverEtat();
-  chargerFlux(versSujet(etat.actif), false);
-});
+// (le sélecteur de tri a disparu : PubMed ne propose que le tri par date)
 $('#contenu').addEventListener('click', e => {
   if(e.target.closest('#rafraichir')) chargerFlux(versSujet(etat.actif), true);
 });
