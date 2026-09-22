@@ -19,6 +19,16 @@ Il reprend l'onglet « Actualités » de l'espace coach d'ARD Coaching, orienté
 - **Traduction** : chaque article a un lien « Traduire en français » (ouvre Google Traduction avec le
   titre et la conclusion, contenu public) ; les textes anglais portent `lang="en"` pour que Safari et
   Chrome proposent de traduire la page entière. Pas d'IA, pas de clé.
+- **Classement des résultats (22/09/2026)** : PubMed est interrogé en tri « pertinence », puis les
+  articles sont reclassés sur les mots réellement tapés (le titre compte plus que la conclusion) ;
+  ceux dont le titre ne contient aucun mot cherché sont écartés.
+- **Comparaison « A vs B »** : une recherche **par côté**, puis entrelacement. Une seule requête OU
+  ne suffisait pas : le sujet le plus étudié occupait toute la liste (« pliométrie vs musculation »
+  ne ramenait que de la musculation, et rééquilibrer après coup ne servait à rien puisque l'autre
+  côté était absent des résultats).
+- **Limite du NCBI** : 3 requêtes par seconde et par adresse IP. Les appels `esummary` et `efetch`
+  sont faits **à la suite** (pas en parallèle) avec des pauses, et un réessai après 1,2 s : sinon la
+  connexion est coupée et le flux affiche une erreur.
 - **Sujets ajoutés par l'utilisateur** : pas de synthèse, seulement la conclusion des auteurs, en
   anglais. Le résumé automatique a été écarté (option A choisie par Arthur le 15/09/2026 : gratuit, sans IA).
 

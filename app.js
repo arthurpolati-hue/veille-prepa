@@ -10,7 +10,7 @@
 
 import { THEMES, REFERENCES, EXCLUSIONS_CLINIQUES } from './themes.js';
 import { analyser, construireRequete } from './traduction.js';
-import { chercher as chercherPubmed, lienArticle } from './pubmed.js';
+import { chercher as chercherPubmed, chercherComparaison, lienArticle } from './pubmed.js';
 
 // PubMed (NCBI) depuis le 22/09/2026 : Europe PMC a cessé d'envoyer les en-têtes CORS,
 // son API est devenue inutilisable depuis un navigateur (détails dans pubmed.js).
@@ -258,9 +258,17 @@ function hacher(s){
 // Pour un sujet cherché, on demande le tri par pertinence et on reclasse sur les mots
 // réellement tapés : sinon « pliométrie vs musculation » remontait de l'ashwagandha,
 // simplement parce que l'étude était récente.
-async function interroger(requete, sujet){
-  const termes = (sujet && sujet.analyse && sujet.analyse.groupes) ? sujet.analyse.groupes.flatMap(g => g.en) : [];
-  return chercherPubmed(requete + FILTRE, { tri: termes.length ? 'pertinence' : 'date', termes });
+async function interroger(requete, sujet, champ){
+  const a = sujet && sujet.analyse;
+  const groupes = (a && a.groupes) ? a.groupes.map(g => g.en) : [];
+  const options = { tri: groupes.length ? 'pertinence' : 'date', termes: groupes.flat(), groupes };
+  // « A vs B » : une recherche PAR CÔTÉ, sinon le sujet le plus étudié occupe toute la
+  // liste — « pliométrie vs musculation » ne ramenait que de la musculation.
+  if(a && a.mode === 'ou' && groupes.length > 1){
+    const requetes = a.groupes.map(g => '(' + construireRequete([g], champ || 'ti', 'et') + ')' + EXCLUSIONS_CLINIQUES + FILTRE);
+    return chercherComparaison(requetes, options);
+  }
+  return chercherPubmed(requete + FILTRE, options);
 }
 
 let jetonFlux = 0;
@@ -278,10 +286,10 @@ async function chargerFlux(s, forcer){
 
   $('#flux').innerHTML = '<p class="vide">Recherche des méta-analyses…</p>';
   try{
-    let res = await interroger(s.requete, s);
+    let res = await interroger(s.requete, s, 'ti');
     let large = false;
     if(res.total < SEUIL_ELARGIR && s.requeteLarge){
-      const r2 = await interroger(s.requeteLarge, s);
+      const r2 = await interroger(s.requeteLarge, s, 'tiab');
       if(r2.total > res.total){ res = r2; large = true; }
     }
     cache = { t: Date.now(), total: res.total, items: res.items, large };
