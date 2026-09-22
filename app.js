@@ -255,8 +255,12 @@ function hacher(s){
 
 // PubMed trie par date. Le tri « plus citées » n'existe pas dans les E-utilities :
 // l'option a été retirée de l'écran.
-async function interroger(requete){
-  return chercherPubmed(requete + FILTRE);
+// Pour un sujet cherché, on demande le tri par pertinence et on reclasse sur les mots
+// réellement tapés : sinon « pliométrie vs musculation » remontait de l'ashwagandha,
+// simplement parce que l'étude était récente.
+async function interroger(requete, sujet){
+  const termes = (sujet && sujet.analyse && sujet.analyse.groupes) ? sujet.analyse.groupes.flatMap(g => g.en) : [];
+  return chercherPubmed(requete + FILTRE, { tri: termes.length ? 'pertinence' : 'date', termes });
 }
 
 let jetonFlux = 0;
@@ -274,10 +278,10 @@ async function chargerFlux(s, forcer){
 
   $('#flux').innerHTML = '<p class="vide">Recherche des méta-analyses…</p>';
   try{
-    let res = await interroger(s.requete);
+    let res = await interroger(s.requete, s);
     let large = false;
     if(res.total < SEUIL_ELARGIR && s.requeteLarge){
-      const r2 = await interroger(s.requeteLarge);
+      const r2 = await interroger(s.requeteLarge, s);
       if(r2.total > res.total){ res = r2; large = true; }
     }
     cache = { t: Date.now(), total: res.total, items: res.items, large };
