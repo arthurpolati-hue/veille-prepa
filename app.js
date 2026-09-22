@@ -431,7 +431,7 @@ $('#contenu').addEventListener('click', async e => {
     if(!derniersArticles.length) return;
     const s = versSujet(etat.actif);
     try{
-      await navigator.clipboard.writeText(texteAResumer((s && s.l) || 'ce sujet'));
+      await navigator.clipboard.writeText(texteAResumer((s && (s.titre || s.l)) || 'ce sujet'));
       const b = e.target.closest('#resumeBtn');
       const avant = b.textContent;
       b.textContent = `${derniersArticles.length} conclusions copiées ✓`;
