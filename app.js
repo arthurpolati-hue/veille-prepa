@@ -205,7 +205,10 @@ function renderContenu(){
     <div class="card">
       <div class="flux-tete">
         <h2>Méta-analyses</h2>
-        <button class="btn btn-ghost btn-sm" type="button" id="rafraichir" aria-label="Actualiser">↻</button>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <button class="btn btn-ghost btn-sm" type="button" id="resumeBtn">📋 Copier pour résumé</button>
+          <button class="btn btn-ghost btn-sm" type="button" id="rafraichir" aria-label="Actualiser">↻</button>
+        </div>
       </div>
       ${sy ? '' : `<p class="note" style="margin:0 0 6px;">Pas de synthèse rédigée pour ce sujet : voici les méta-analyses trouvées, avec la conclusion de leurs auteurs.</p>`}
       <div id="flux"><p class="vide">Recherche des méta-analyses…</p></div>
@@ -304,6 +307,31 @@ async function chargerFlux(s, forcer){
   }
 }
 
+// Synthèse : sans IA payante ni serveur. On prépare le texte des conclusions affichées
+// avec une consigne, à coller dans un assistant (Claude, ChatGPT…). La consigne interdit
+// d'ajouter quoi que ce soit qui ne figure pas dans les conclusions.
+let derniersArticles = [];
+
+function texteAResumer(sujet){
+  const lignes = [
+    `Voici les conclusions de ${derniersArticles.length} méta-analyses et revues systématiques sur : « ${sujet} ».`,
+    '',
+    "Fais-m'en une synthèse en français, pour un préparateur physique :",
+    '- ce qui ressort clairement, avec les chiffres et les conditions (population, durée) ;',
+    "- les points où les études ne sont pas d'accord ;",
+    '- ce qui reste incertain ou mal établi ;',
+    "- termine par ce que ça change concrètement à l'entraînement.",
+    "N'ajoute aucune information qui ne figure pas dans les textes ci-dessous, et n'invente aucun chiffre.",
+    ''
+  ];
+  derniersArticles.forEach((it, i) => {
+    lignes.push(`${i + 1}. ${it.titre} (${it.revue || 'revue inconnue'}, ${String(it.date || '').slice(0, 4)})`);
+    lignes.push(it.conclusion ? `   ${it.conclusion}` : '   (pas de conclusion dans le résumé)');
+    lignes.push('');
+  });
+  return lignes.join('\n');
+}
+
 // Les articles sont en anglais. Pas d'IA ni de clé : on ouvre Google Traduction avec le
 // titre et la conclusion (contenu public). Les textes portent lang="en" pour que Safari
 // et Chrome proposent aussi de traduire la page entière.
@@ -315,6 +343,7 @@ function lienTraduction(it){
 function renderFlux(cache, horsLigne){
   const il30j = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
   const items = cache.items || [];
+  derniersArticles = items;                      // pour le bouton « Copier pour résumé »
   $('#flux').innerHTML = items.length ? items.map(it => {
     const lien = lienArticle(it);
     const type = it.metaAnalyse ? 'Méta-analyse' : 'Revue systématique';
@@ -397,7 +426,19 @@ $('#chips').addEventListener('click', e => {
 });
 
 // (le sélecteur de tri a disparu : PubMed ne propose que le tri par date)
-$('#contenu').addEventListener('click', e => {
+$('#contenu').addEventListener('click', async e => {
+  if(e.target.closest('#resumeBtn')){
+    if(!derniersArticles.length) return;
+    const s = versSujet(etat.actif);
+    try{
+      await navigator.clipboard.writeText(texteAResumer((s && s.l) || 'ce sujet'));
+      const b = e.target.closest('#resumeBtn');
+      const avant = b.textContent;
+      b.textContent = `${derniersArticles.length} conclusions copiées ✓`;
+      setTimeout(()=>{ b.textContent = avant; }, 2500);
+    }catch(_){ }
+    return;
+  }
   if(e.target.closest('#rafraichir')) chargerFlux(versSujet(etat.actif), true);
 });
 
